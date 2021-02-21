@@ -13,12 +13,12 @@ let noteData = [];
 // Sets up the Express app to handle data parsing
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "/public")));
+app.use(express.static(path.join(__dirname + "/public")));
 
 
 // Basic route that sends the user first to the AJAX Page
-app.get('/notes', (req, res) => res.sendFile(path.join(__dirname, 'public', 'notes.html')));
-app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public','index.html')));
+app.get('/notes', (req, res) => res.sendFile(path.join(__dirname, 'public/notes.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public/index.html')));
 
 //api call  
 app.get('/api/notes', function(err, res){
@@ -66,21 +66,35 @@ app.post("/api/notes", function(req, res) {
   }
 });
 
-// Create New notes - takes in JSON input
-// app.post('/api/notes', (req, res) => {
-//     // req.body hosts is equal to the JSON post sent from the user
-//     // This works because of our body parsing middleware
-//     const newCharacter = req.body;
-  
-//     // Using a RegEx Pattern to remove spaces from newCharacter
-//     // You can read more about RegEx Patterns later https://www.regexbuddy.com/regex.html
-//     newCharacter.routeName = newCharacter.name.replace(/\s+/g, '').toLowerCase();
-//     console.log(newCharacter);
-  
-//     characters.push(newCharacter);
-//     res.json(newCharacter);
-//   });
+
+// Delete a note
+app.delete("/api/notes/:id", function(req, res) {
+  try {
+    //  reads the json file
+    noteData = fs.readFileSync("./db/db.json", "utf8");
+    // parse the data to get an array of the objects
+    noteData = JSON.parse(noteData);
+    // delete the old note from the array on note objects
+    noteData = noteData.filter(function(note) {
+      return note.id != req.params.id;
+    });
+    // make it string(stringify)so you can write it to the file
+    noteData = JSON.stringify(noteData);
+    // write the new note to the file
+    fs.writeFile("./db/db.json", noteData, "utf8", function(err) {
+      // error handling
+      if (err) throw err;
+    });
+
+    // change it back to an array of objects & send it back to the browser (client)
+    res.send(JSON.parse(noteData));
+
+    // error handling
+  } catch (err) {
+    throw err;
+    console.log(err);
+  }
+});
 
   // Starts the server to begin listening
-
 app.listen(PORT, () => console.log(`App listening on PORT ${PORT}`));
